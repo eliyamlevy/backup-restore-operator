@@ -184,11 +184,13 @@ func main() {
 	backup.Register(ctx, backups.Resources().V1().Backup(),
 		backups.Resources().V1().ResourceSet(),
 		core.Core().V1().Secret(),
+		core.Core().V1().ConfigMap(),
 		core.Core().V1().Namespace(),
 		clientSet, dynamicInterface, defaultMountPath, defaultS3)
 	restore.Register(ctx, backups.Resources().V1().Restore(),
 		backups.Resources().V1().Backup(),
 		core.Core().V1().Secret(),
+		core.Core().V1().ConfigMap(),
 		k8sclient.CoordinationV1().Leases(ChartNamespace),
 		clientSet, dynamicInterface, sharedClientFactory, restmapper, defaultMountPath, defaultS3)
 

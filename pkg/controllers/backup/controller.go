@@ -35,6 +35,7 @@ type handler struct {
 	backups                 backupControllers.BackupController
 	resourceSets            backupControllers.ResourceSetController
 	secrets                 v1core.SecretController
+	configMaps              v1core.ConfigMapController
 	namespaces              v1core.NamespaceController
 	discoveryClient         discovery.DiscoveryInterface
 	dynamicClient           dynamic.Interface
@@ -50,6 +51,7 @@ func Register(
 	backups backupControllers.BackupController,
 	resourceSets backupControllers.ResourceSetController,
 	secrets v1core.SecretController,
+	configMaps v1core.ConfigMapController
 	namespaces v1core.NamespaceController,
 	clientSet *clientset.Clientset,
 	dynamicInterface dynamic.Interface,
@@ -61,6 +63,7 @@ func Register(
 		backups:                 backups,
 		resourceSets:            resourceSets,
 		secrets:                 secrets,
+		configMaps:				 configMaps,
 		namespaces:              namespaces,
 		discoveryClient:         clientSet.Discovery(),
 		dynamicClient:           dynamicInterface,
@@ -240,6 +243,22 @@ func (h *handler) performBackup(backup *v1.Backup, tmpBackupPath, backupFileName
 	err = rh.GatherResources(h.ctx, resourceSetTemplate.ResourceSelectors)
 	if err != nil {
 		return err
+	}
+
+	if backup.Spec.IsMigration {
+		for _, resourceList := range rh.GVResourceToObjects {
+			for _, resource := range resourceList {
+				//check if deployment
+				if resource.GetKind() == "deployment" {
+					//check if controller
+					if strings.Contains(resource.GetName(), "controller") {
+						//scale down and persist replica size
+
+						continue
+					}
+				}
+			}
+		}
 	}
 
 	logrus.Infof("Finished gathering resources for backup CR %v, writing to temp location", backup.Name)
