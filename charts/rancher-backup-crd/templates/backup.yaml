@@ -39,6 +39,8 @@ spec:
                 description: Name of the Secret containing the encryption config
                 nullable: true
                 type: string
+              isMigration:
+                type: boolean
               resourceSetName:
                 description: Name of the ResourceSet CR to use for backup
                 nullable: true

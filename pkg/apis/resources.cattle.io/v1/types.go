@@ -33,6 +33,7 @@ type BackupSpec struct {
 	EncryptionConfigSecretName string           `json:"encryptionConfigSecretName,omitempty"`
 	Schedule                   string           `json:"schedule,omitempty"`
 	RetentionCount             int64            `json:"retentionCount,omitempty"`
+	IsMigration                bool             `json:"isMigration,omitempty"`
 }
 
 type BackupStatus struct {
