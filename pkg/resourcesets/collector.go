@@ -185,7 +185,7 @@ func (h *ResourceHandler) gatherResourcesForGroupVersion(filter v1.ResourceSelec
 }
 
 func (h *ResourceHandler) gatherObjectsForResource(ctx context.Context, res k8sv1.APIResource, gv schema.GroupVersion, filter v1.ResourceSelector) ([]unstructured.Unstructured, error) {
-	var filteredByNamespace, filteredObjects []unstructured.Unstructured
+	var filteredByAnnotation, filteredByNamespace, filteredObjects []unstructured.Unstructured
 	gvr := gv.WithResource(res.Name)
 	var dr dynamic.ResourceInterface
 	dr = h.DynamicClient.Resource(gvr)
@@ -196,9 +196,15 @@ func (h *ResourceHandler) gatherObjectsForResource(ctx context.Context, res k8sv
 		return filteredObjects, err
 	}
 
+	//Filter out based on annotation
+	filteredByAnnotation, err = h.filterByAnnotation(filter, filteredByName)
+	if err != nil {
+		return filteredObjects, err
+	}
+
 	if res.Namespaced {
 		if len(filter.Namespaces) > 0 || filter.NamespaceRegexp != "" {
-			filteredByNamespace, err = h.filterByNamespace(filter, filteredByName)
+			filteredByNamespace, err = h.filterByNamespace(filter, filteredByAnnotation)
 			if err != nil {
 				return filteredObjects, err
 			}
@@ -206,8 +212,52 @@ func (h *ResourceHandler) gatherObjectsForResource(ctx context.Context, res k8sv
 			return filteredObjects, nil
 		}
 	}
-	filteredObjects = filteredByName
+	filteredObjects = filteredByAnnotation
 	return filteredObjects, nil
+}
+
+// This function is used to filter out resources based on annotations provided in the resourceSet.
+// This is done using the excludeAnnotations resource selector which is of the type map[string]string.
+// Example:
+//   excludeAnnotations:
+//     annotationName1: annotationValue1
+//     annotationName2: annotationValue2
+func (h *ResourceHandler) filterByAnnotation(filter v1.ResourceSelector, filteredByName []unstructured.Unstructured) ([]unstructured.Unstructured, error) {
+	var filteredByAnnotation []unstructured.Unstructured
+	// filter out items with objectset.rio.cattle.io/id: annotation
+	logrus.Debugf("Filtering out objects with fleet managed annotations.")
+	for _, resObj := range filteredByName {
+		metadata := resObj.Object["metadata"].(map[string]interface{})
+		name := metadata["name"].(string)
+		if metadata["annotations"] == nil {
+			logrus.Debugf("Annotations for %s are nil", name)
+			continue
+		}
+		resObjAnnotations := metadata["annotations"].(map[string]interface{})
+		logrus.Debugf("Metadata Annotations for %s, %v", name, resObjAnnotations)
+		//check annotations
+		hasAnnotation := false
+		for key, value := range filter.ExcludeAnnotations {
+			//Case any resource with that annotation no matter what value
+			if value == "" {
+				_, ok := resObjAnnotations[key]
+				if ok {
+					logrus.Debugf("Skipping [%s] because it has annotation %s", name, key)
+					hasAnnotation = true
+				}
+			} else { //Case filter by annotation and annotation value
+				resObjAnnotationValue, ok := resObjAnnotations[key]
+				if ok && resObjAnnotationValue == value {
+					logrus.Debugf("Skipping [%s] because it annotation %s:%s", name, key, value)
+					hasAnnotation = true
+				}
+			}
+		}
+		if !hasAnnotation {
+			filteredByAnnotation = append(filteredByAnnotation, resObj)
+		}
+	}
+	return filteredByAnnotation, nil
 }
 
 func (h *ResourceHandler) filterByNameAndLabel(ctx context.Context, dr dynamic.ResourceInterface, filter v1.ResourceSelector) ([]unstructured.Unstructured, error) {

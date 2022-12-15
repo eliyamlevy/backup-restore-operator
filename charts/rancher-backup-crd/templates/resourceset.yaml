@@ -40,6 +40,12 @@ spec:
                 apiVersion:
                   nullable: true
                   type: string
+                excludeAnnotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  nullable: true
+                  type: object
                 excludeKinds:
                   items:
                     nullable: true

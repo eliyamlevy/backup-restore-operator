@@ -174,6 +174,13 @@ func (in *ResourceSelector) DeepCopyInto(out *ResourceSelector) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.ExcludeAnnotations != nil {
+		in, out := &in.ExcludeAnnotations, &out.ExcludeAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

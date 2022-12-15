@@ -70,6 +70,7 @@ type ResourceSelector struct {
 	LabelSelectors            *metav1.LabelSelector `json:"labelSelectors,omitempty"`
 	ExcludeKinds              []string              `json:"excludeKinds,omitempty"`
 	ExcludeResourceNameRegexp string                `json:"excludeResourceNameRegexp,omitempty"`
+	ExcludeAnnotations        map[string]string     `json:"excludeAnnotations,omitempty"`
 }
 
 type ControllerReference struct {
