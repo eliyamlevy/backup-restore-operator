@@ -246,19 +246,7 @@ func (h *handler) performBackup(backup *v1.Backup, tmpBackupPath, backupFileName
 	}
 
 	if backup.Spec.IsMigration {
-		for _, resourceList := range rh.GVResourceToObjects {
-			for _, resource := range resourceList {
-				//check if deployment
-				if resource.GetKind() == "deployment" {
-					//check if controller
-					if strings.Contains(resource.GetName(), "controller") {
-						//scale down and persist replica size
-
-						continue
-					}
-				}
-			}
-		}
+		scaleDownControllerAndStoreReplicaCount(rh, h.configMaps)
 	}
 
 	logrus.Infof("Finished gathering resources for backup CR %v, writing to temp location", backup.Name)
