@@ -239,14 +239,12 @@ func (h *handler) performBackup(backup *v1.Backup, tmpBackupPath, backupFileName
 		DiscoveryClient: h.discoveryClient,
 		DynamicClient:   h.dynamicClient,
 		TransformerMap:  transformerMap,
+		IsMigration:     backup.Spec.IsMigration,
+		ConfigMapClient: h.configMaps
 	}
-	err = rh.GatherResources(h.ctx, resourceSetTemplate.ResourceSelectors)
+	err = rh.GatherResources(h.ctx, resourceSetTemplate.ResourceSelectors, backup.Spec.IsMigration, h.configMaps)
 	if err != nil {
 		return err
-	}
-
-	if backup.Spec.IsMigration {
-		scaleDownControllerAndStoreReplicaCount(rh, h.configMaps)
 	}
 
 	logrus.Infof("Finished gathering resources for backup CR %v, writing to temp location", backup.Name)
