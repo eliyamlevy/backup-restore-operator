@@ -1,6 +1,9 @@
 package restore
 
 import (
+	"fmt"
+	"reflect"
+
 	v1 "github.com/rancher/backup-restore-operator/pkg/apis/resources.cattle.io/v1"
 	"github.com/sirupsen/logrus"
 	k8sv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,18 +45,28 @@ func (h *handler) scaleDownControllersFromResourceSet(objFromBackupCR ObjectsFro
 	}
 }
 
+//All controller replicas have been set to 0 in the back up files. This function will check a map stored in the root of
+//of the backup file for the number of replicas to scale up to.
 func (h *handler) scaleUpControllersFromResourceSet(objFromBackupCR ObjectsFromBackupCR) {
 	for _, controllerRef := range objFromBackupCR.backupResourceSet.ControllerReferences {
+		//Check handler for replicaMap (entries are stored with the key {namespace}/{name})
+		entryName := controllerRef.Namespace + "/" + controllerRef.Name
+		replicas := int32(h.controllerReplicas[entryName].(int64))
+		if fmt.Sprintf("%s", reflect.TypeOf(replicas)) != "int32" {
+			//TODO: throw err
+			logrus.Errorf("Error scaling up %v/%v/%v, edit it to scale back to %v", controllerRef.APIVersion, controllerRef.Resource, controllerRef.Name, replicas)
+		}
+		//Get controller object
 		controllerObj, dr := h.getObjFromControllerRef(controllerRef)
 		if controllerObj == nil {
 			continue
 		}
-		controllerObj.Object["spec"].(map[string]interface{})["replicas"] = controllerRef.Replicas
+		controllerObj.Object["spec"].(map[string]interface{})["replicas"] = replicas
 		// update controller to scale it back up
-		logrus.Infof("Scaling up controllerRef %v/%v/%v to %v", controllerRef.APIVersion, controllerRef.Resource, controllerRef.Name, controllerRef.Replicas)
+		logrus.Infof("Scaling up controllerRef %v/%v/%v to %v", controllerRef.APIVersion, controllerRef.Resource, controllerRef.Name, replicas)
 		_, err := dr.Update(h.ctx, controllerObj, k8sv1.UpdateOptions{})
 		if err != nil {
-			logrus.Errorf("Error scaling up %v/%v/%v, edit it to scale back to %v", controllerRef.APIVersion, controllerRef.Resource, controllerRef.Name, controllerRef.Replicas)
+			logrus.Errorf("Error scaling up %v/%v/%v, edit it to scale back to %v", controllerRef.APIVersion, controllerRef.Resource, controllerRef.Name, replicas)
 		}
 	}
 }

@@ -64,6 +64,7 @@ type handler struct {
 	defaultBackupMountPath  string
 	defaultS3BackupLocation *v1.S3ObjectStore
 	kubernetesLeaseClient   coordinationclientv1.LeaseInterface
+	controllerReplicas		map[string]interface{}
 }
 
 type ObjectsFromBackupCR struct {
@@ -170,6 +171,7 @@ func (h *handler) OnRestoreChange(_ string, restore *v1.Restore) (*v1.Restore, e
 		}
 	}
 
+	//TODO: ADD replicaMap grab from backup
 	backupLocation := restore.Spec.StorageLocation
 	var foundBackup bool
 	if backupLocation == nil {
