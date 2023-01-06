@@ -7,13 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 
 	v1 "github.com/rancher/backup-restore-operator/pkg/apis/resources.cattle.io/v1"
 	v1core "github.com/rancher/wrangler/pkg/generated/controllers/core/v1"
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	k8sv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -449,7 +447,7 @@ func (h *ResourceHandler) gatherObjectsForNonListResource(ctx context.Context, r
 }
 
 func (h *ResourceHandler) WriteBackupObjects(backupPath string) error {
-	replicasMap := make(map[string]string)
+	replicasMap := make(map[string]interface{})
 	for gvResource, resObjects := range h.GVResourceToObjects {
 		for _, resObj := range resObjects {
 			metadata := resObj.Object["metadata"].(map[string]interface{})
@@ -479,25 +477,27 @@ func (h *ResourceHandler) WriteBackupObjects(backupPath string) error {
 					if !found || err != nil {
 						continue
 					}
-					replicasMap[entryName] = strconv.FormatInt(replicas, 10)
+					//Save replica number
+					replicasMap[entryName] = replicas
+					//Set replicas to 0
 					unstructured.SetNestedField(resObj.Object, int64(0), "spec", "replicas")
 
-					//update config map
-					// The number of replicas needs to persist across migration create configMaps for each controller storing the
-					// number of replicas.
-					h.ConfigMapClient.Get("cattle-resources-system", "controller-replicas", k8sv1.GetOptions{})
-					cm := corev1.ConfigMap{
-						TypeMeta: k8sv1.TypeMeta{
-							Kind:       "ConfigMap",
-							APIVersion: "v1",
-						},
-						ObjectMeta: k8sv1.ObjectMeta{
-							Name:      "controller-replicas",
-							Namespace: "cattle-resources-system",
-						},
-						Data: replicasMap,
-					}
-					h.ConfigMapClient.Update(&cm)
+					// //update config map
+					// // The number of replicas needs to persist across migration create configMaps for each controller storing the
+					// // number of replicas.
+					// h.ConfigMapClient.Get("cattle-resources-system", "controller-replicas", k8sv1.GetOptions{})
+					// cm := corev1.ConfigMap{
+					// 	TypeMeta: k8sv1.TypeMeta{
+					// 		Kind:       "ConfigMap",
+					// 		APIVersion: "v1",
+					// 	},
+					// 	ObjectMeta: k8sv1.ObjectMeta{
+					// 		Name:      "controller-replicas",
+					// 		Namespace: "cattle-resources-system",
+					// 	},
+					// 	Data: replicasMap,
+					// }
+					// h.ConfigMapClient.Update(&cm)
 				}
 			}
 			objName := metadata["name"].(string)
@@ -534,6 +534,11 @@ func (h *ResourceHandler) WriteBackupObjects(backupPath string) error {
 				return err
 			}
 		}
+	}
+	//Write replicaMap to backup
+	err := writeToBackup(replicasMap, backupPath, "controller_replicas", nil, "")
+	if err != nil {
+		return err
 	}
 	return nil
 }
