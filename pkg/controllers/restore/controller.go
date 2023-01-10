@@ -64,7 +64,7 @@ type handler struct {
 	defaultBackupMountPath  string
 	defaultS3BackupLocation *v1.S3ObjectStore
 	kubernetesLeaseClient   coordinationclientv1.LeaseInterface
-	controllerReplicas		map[string]interface{}
+	controllerReplicas      map[string]interface{}
 }
 
 type ObjectsFromBackupCR struct {
@@ -95,7 +95,7 @@ func Register(
 	restores restoreControllers.RestoreController,
 	backups restoreControllers.BackupController,
 	secrets v1core.SecretController,
-	configMaps v1core.ConfigMapController
+	configMaps v1core.ConfigMapController,
 	leaseClient coordinationclientv1.LeaseInterface,
 	clientSet *clientset.Clientset,
 	dynamicInterface dynamic.Interface,
@@ -109,7 +109,7 @@ func Register(
 		restores:                restores,
 		backups:                 backups,
 		secrets:                 secrets,
-		configMaps:				 configMaps,
+		configMaps:              configMaps,
 		dynamicClient:           dynamicInterface,
 		discoveryClient:         clientSet.Discovery(),
 		apiClient:               clientSet,

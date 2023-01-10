@@ -51,7 +51,7 @@ func Register(
 	backups backupControllers.BackupController,
 	resourceSets backupControllers.ResourceSetController,
 	secrets v1core.SecretController,
-	configMaps v1core.ConfigMapController
+	configMaps v1core.ConfigMapController,
 	namespaces v1core.NamespaceController,
 	clientSet *clientset.Clientset,
 	dynamicInterface dynamic.Interface,
@@ -63,7 +63,7 @@ func Register(
 		backups:                 backups,
 		resourceSets:            resourceSets,
 		secrets:                 secrets,
-		configMaps:				 configMaps,
+		configMaps:              configMaps,
 		namespaces:              namespaces,
 		discoveryClient:         clientSet.Discovery(),
 		dynamicClient:           dynamicInterface,
@@ -240,7 +240,7 @@ func (h *handler) performBackup(backup *v1.Backup, tmpBackupPath, backupFileName
 		DynamicClient:   h.dynamicClient,
 		TransformerMap:  transformerMap,
 		IsMigration:     backup.Spec.IsMigration,
-		ConfigMapClient: h.configMaps
+		ConfigMapClient: h.configMaps,
 	}
 	err = rh.GatherResources(h.ctx, resourceSetTemplate.ResourceSelectors, backup.Spec.IsMigration, h.configMaps)
 	if err != nil {
