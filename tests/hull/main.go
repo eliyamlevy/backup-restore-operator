@@ -276,9 +276,6 @@ var suite = test.Suite{
 	},
 
 	NamedChecks: []test.NamedCheck{
-		{
-			Name: "All Deployments Have ServiceAccount",
-		},
 		{ // Check Container Args
 			Name: "Check Container Args",
 			Covers: []string{
@@ -378,9 +375,8 @@ var suite = test.Suite{
 					}
 					pcn := checker.MustRenderValue[string](tc, ".Values.priorityClassName")
 					assert.Equal(
-						tc.T, pcn,
-						podTemplateSpec.Spec.PriorityClassName,
-						"Deployment %s/%s does not have correct PriorityClassName",
+						tc.T, podTemplateSpec.Spec.PriorityClassName,
+						pcn, "Deployment %s/%s does not have correct PriorityClassName",
 						obj.GetNamespace(), obj.GetName(),
 					)
 				}),
@@ -677,8 +673,6 @@ var suite = test.Suite{
 					if len(imagePullSecrets) > 0 {
 						assert.Equal(tc.T, imagePullSecrets, podTemplateSpec.Spec.ImagePullSecrets, "ImagePullSecrets in Deployment %s/%s do not have correct configuration", obj.GetNamespace(), obj.GetName())
 					}
-					// for _, ips := range imagePullSecrets {
-					// }
 				}),
 			},
 		},

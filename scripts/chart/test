@@ -21,5 +21,4 @@ if [[ $? > 0 ]]; then
     exit 1
 fi
 
-
-HELM_PLUGINS=/root/.local/share/helm/plugins/ helm unittest --helm3 ../build/charts/rancher-backup
+HELM_PLUGINS=/root/.local/share/helm/plugins/ helm unittest ../build/charts/rancher-backup
